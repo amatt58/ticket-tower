@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
+import { DraftReplyButton } from "@/features/ai/components/draft-reply-button";
 import {
   type CreateMessageActionState,
   createMessageAction,
@@ -13,6 +14,22 @@ const initialState: CreateMessageActionState = {};
 export function MessageComposer({ ticketId }: { ticketId: string }) {
   const [isInternal, setIsInternal] = useState(false);
   const [state, formAction, isPending] = useActionState(createMessageAction, initialState);
+  const [draftError, setDraftError] = useState<string | null>(null);
+  // Uncontrolled so the form still resets itself after a successful submit.
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+
+  function insertDraft(draft: string) {
+    const textarea = bodyRef.current;
+    if (!textarea) return;
+    if (textarea.value.trim() && !window.confirm("Replace your current text with the AI draft?")) {
+      return;
+    }
+    setDraftError(null);
+    // A draft is always a customer reply, never an internal note.
+    setIsInternal(false);
+    textarea.value = draft;
+    textarea.focus();
+  }
 
   return (
     <form action={formAction} className="space-y-2">
@@ -20,6 +37,7 @@ export function MessageComposer({ ticketId }: { ticketId: string }) {
       <input type="hidden" name="isInternal" value={String(isInternal)} />
 
       <Textarea
+        ref={bodyRef}
         name="body"
         required
         rows={3}
@@ -27,6 +45,7 @@ export function MessageComposer({ ticketId }: { ticketId: string }) {
       />
 
       {state.error && <p className="text-sm text-destructive">{state.error}</p>}
+      {draftError && <p className="text-sm text-destructive">{draftError}</p>}
 
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -38,9 +57,12 @@ export function MessageComposer({ ticketId }: { ticketId: string }) {
           />
           Internal note (not visible to customer)
         </label>
-        <Button type="submit" disabled={isPending}>
-          {isPending ? "Posting..." : isInternal ? "Add note" : "Send reply"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <DraftReplyButton ticketId={ticketId} onDraft={insertDraft} onError={setDraftError} />
+          <Button type="submit" disabled={isPending}>
+            {isPending ? "Posting..." : isInternal ? "Add note" : "Send reply"}
+          </Button>
+        </div>
       </div>
     </form>
   );

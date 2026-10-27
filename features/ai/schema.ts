@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const summariseTicketSchema = z.object({
+export const ticketActionSchema = z.object({
   ticketId: z.string().min(1),
 });
 

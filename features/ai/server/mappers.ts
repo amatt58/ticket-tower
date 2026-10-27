@@ -1,12 +1,12 @@
 import type { TicketSentiment as PrismaTicketSentiment } from "@prisma/client";
 import { storedTicketSummarySchema } from "@/features/ai/schema";
-import type { getTicketForSummary } from "@/features/ai/server/queries";
+import type { getTicketForPrompt } from "@/features/ai/server/queries";
 import type { TicketSummaryView } from "@/features/ai/types";
-import type { TicketSummaryContext } from "@/server/ai/prompts/ticket-summary";
+import type { TicketPromptContext } from "@/server/ai/prompts/ticket-context";
 
-type TicketForSummary = NonNullable<Awaited<ReturnType<typeof getTicketForSummary>>>;
+type TicketForPrompt = NonNullable<Awaited<ReturnType<typeof getTicketForPrompt>>>;
 
-export function toSummaryContext(ticket: TicketForSummary): TicketSummaryContext {
+export function toTicketPromptContext(ticket: TicketForPrompt): TicketPromptContext {
   return {
     title: ticket.title,
     description: ticket.description,

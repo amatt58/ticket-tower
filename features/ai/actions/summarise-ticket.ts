@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { type StoredTicketSummary, summariseTicketSchema } from "@/features/ai/schema";
-import { toSummaryContext } from "@/features/ai/server/mappers";
-import { getTicketForSummary } from "@/features/ai/server/queries";
+import { type StoredTicketSummary, ticketActionSchema } from "@/features/ai/schema";
+import { toTicketPromptContext } from "@/features/ai/server/mappers";
+import { getTicketForPrompt } from "@/features/ai/server/queries";
 import {
   AIOutputError,
   AIProviderError,
@@ -28,10 +28,10 @@ export async function summariseTicketAction(input: {
   const session = await auth();
   if (!session?.user) return { error: "You must be signed in." };
 
-  const parsed = summariseTicketSchema.safeParse(input);
+  const parsed = ticketActionSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid ticket." };
 
-  const ticket = await getTicketForSummary(parsed.data.ticketId);
+  const ticket = await getTicketForPrompt(parsed.data.ticketId);
   if (!ticket) return { error: "Ticket not found." };
 
   // The model call happens outside the transaction — it can take several seconds.
@@ -40,7 +40,7 @@ export async function summariseTicketAction(input: {
   try {
     result = await completeStructured(
       ai,
-      buildTicketSummaryPrompt(toSummaryContext(ticket)),
+      buildTicketSummaryPrompt(toTicketPromptContext(ticket)),
       ticketSummaryOutputSchema,
     );
   } catch (error) {

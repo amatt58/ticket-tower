@@ -1,6 +1,6 @@
 import { db } from "@/server/db";
 
-export async function getTicketForSummary(id: string) {
+export async function getTicketForPrompt(id: string) {
   return db.ticket.findUnique({
     where: { id },
     select: {
