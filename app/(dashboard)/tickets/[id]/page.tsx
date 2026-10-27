@@ -1,4 +1,6 @@
 import { notFound } from "next/navigation";
+import { AiSummaryCard } from "@/features/ai/components/ai-summary-card";
+import { toTicketSummaryView } from "@/features/ai/server/mappers";
 import { MessageComposer } from "@/features/tickets/components/message-composer";
 import { MessageThread } from "@/features/tickets/components/message-thread";
 import { TicketDescription } from "@/features/tickets/components/ticket-description";
@@ -20,6 +22,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
   const ticket = toTicketDetail(ticketRecord);
   const assignableUsers = assignableUserRecords.map(toAssignableUser);
+  const summary = toTicketSummaryView(ticketRecord);
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
@@ -49,7 +52,10 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
         </Tabs>
       </div>
 
-      <TicketDetailSidebar ticket={ticket} assignableUsers={assignableUsers} />
+      <div className="space-y-6">
+        <AiSummaryCard ticketId={ticket.id} summary={summary} />
+        <TicketDetailSidebar ticket={ticket} assignableUsers={assignableUsers} />
+      </div>
     </div>
   );
 }
