@@ -1,12 +1,13 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { useState, useTransition } from "react";
 import { summariseTicketAction } from "@/features/ai/actions/summarise-ticket";
 import type { TicketSentiment, TicketSummaryView } from "@/features/ai/types";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Skeleton } from "@/shared/components/ui/skeleton";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -26,6 +27,27 @@ function Section({ label, text }: { label: string; text: string }) {
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
       <p className="text-sm">{text}</p>
     </div>
+  );
+}
+
+// Mirrors the summary layout (sentiment badge + four labelled sections) so nothing
+// shifts when the real content arrives.
+function SummarySkeleton() {
+  return (
+    <>
+      <Skeleton className="h-5 w-32 rounded-full" />
+      {["w-full", "w-11/12", "w-4/5", "w-full"].map((lastLineWidth, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder list
+        <div key={index} className="space-y-2">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className={`h-3 ${lastLineWidth}`} />
+        </div>
+      ))}
+      <p role="status" className="text-xs text-muted-foreground">
+        Reading the ticket and conversation...
+      </p>
+    </>
   );
 }
 
@@ -55,13 +77,16 @@ export function AiSummaryCard({
           AI summary
         </CardTitle>
         <Button size="sm" variant="outline" onClick={handleSummarise} disabled={isPending}>
+          {isPending && <Loader2 className="h-4 w-4 motion-safe:animate-spin" />}
           {isPending ? "Summarising..." : summary ? "Regenerate" : "Summarise"}
         </Button>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4" aria-busy={isPending}>
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {summary ? (
+        {isPending ? (
+          <SummarySkeleton />
+        ) : summary ? (
           <>
             {summary.sentiment && (
               <Badge variant={SENTIMENT_VARIANT[summary.sentiment]}>
@@ -78,12 +103,10 @@ export function AiSummaryCard({
             </p>
           </>
         ) : (
-          !isPending && (
-            <p className="text-sm text-muted-foreground">
-              No summary yet. Generate one to get the problem, context, and a suggested next step at
-              a glance.
-            </p>
-          )
+          <p className="text-sm text-muted-foreground">
+            No summary yet. Generate one to get the problem, context, and a suggested next step at a
+            glance.
+          </p>
         )}
       </CardContent>
     </Card>
