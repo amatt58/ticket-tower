@@ -5,7 +5,7 @@ import { createOpenAIProvider } from "./providers/openai";
 import type { AIProvider } from "./types";
 
 export { AIOutputError, AIProviderError } from "./errors";
-export { completeStructured } from "./structured";
+export { completeStructured, type StructuredResult } from "./structured";
 export type {
   AIProvider,
   AIProviderName,

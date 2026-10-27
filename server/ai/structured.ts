@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { AIOutputError } from "./errors";
-import type { AIProvider, CompletionPrompt } from "./types";
+import type { AIProvider, CompletionPrompt, CompletionResult } from "./types";
+
+export type StructuredResult<T> = Omit<CompletionResult, "text"> & { data: T };
 
 // Some models wrap JSON in a markdown fence even when told not to.
 function stripCodeFence(text: string): string {
@@ -14,7 +16,7 @@ export async function completeStructured<T>(
   provider: AIProvider,
   prompt: Omit<CompletionPrompt, "responseFormat">,
   schema: z.ZodType<T>,
-): Promise<T> {
+): Promise<StructuredResult<T>> {
   const result = await provider.complete({ ...prompt, responseFormat: "json" });
   const raw = stripCodeFence(result.text);
 
@@ -33,5 +35,5 @@ export async function completeStructured<T>(
       { cause: parsed.error },
     );
   }
-  return parsed.data;
+  return { data: parsed.data, model: result.model, usage: result.usage };
 }
