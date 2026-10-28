@@ -56,7 +56,6 @@ export function TicketDetailSidebar({
             }
           />
         )}
-        {ticket.aiSummary && <Field label="AI summary" value={ticket.aiSummary} />}
       </CardContent>
     </Card>
   );
