@@ -235,37 +235,56 @@ const SEED_TICKETS: SeedTicket[] = [
   },
 ];
 
+const LOCAL_FALLBACK_PASSWORD = "changeme123"; // dev-only fixture, not a real secret
+
+function isLocalDatabase(): boolean {
+  const host = new URL(process.env.DATABASE_URL as string).hostname;
+  return host === "localhost" || host === "127.0.0.1";
+}
+
+// Hosted databases (Neon) must get explicit passwords — the repo is public,
+// so the local fallback would be a known credential on the live demo.
+function seedPassword(envName: string): string {
+  const value = process.env[envName]?.trim();
+  if (value) return value;
+  if (isLocalDatabase()) return LOCAL_FALLBACK_PASSWORD;
+  throw new Error(`${envName} must be set when seeding a non-local database.`);
+}
+
 async function main() {
   const adminEmail = "admin@tickettower.local";
-  const adminPassword = "changeme123"; // dev-only fixture, not a real secret
+  const adminPassword = seedPassword("SEED_ADMIN_PASSWORD");
+  // The agent account doubles as the public demo login on the deployed app.
   const agentEmail = "agent@tickettower.local";
-  const agentPassword = "changeme123"; // dev-only fixture, not a real secret
+  const agentPassword = seedPassword("SEED_AGENT_PASSWORD");
 
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
+  const agentPasswordHash = await bcrypt.hash(agentPassword, 10);
+
+  // Re-running the seed resets passwords, so credentials can be rotated in place.
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },
-    update: {},
+    update: { passwordHash: adminPasswordHash },
     create: {
       email: adminEmail,
       name: "Admin Agent",
-      passwordHash: await bcrypt.hash(adminPassword, 10),
+      passwordHash: adminPasswordHash,
       role: "admin",
     },
   });
 
   const agent = await prisma.user.upsert({
     where: { email: agentEmail },
-    update: {},
+    update: { passwordHash: agentPasswordHash },
     create: {
       email: agentEmail,
       name: "Sam Agent",
-      passwordHash: await bcrypt.hash(agentPassword, 10),
+      passwordHash: agentPasswordHash,
       role: "agent",
     },
   });
 
-  console.log(
-    `Seeded test users: ${adminEmail} / ${adminPassword}, ${agentEmail} / ${agentPassword}`,
-  );
+  console.log(`Seeded users: ${adminEmail}, ${agentEmail}`);
 
   const existingCount = await prisma.ticket.count();
   if (existingCount > 0) {
