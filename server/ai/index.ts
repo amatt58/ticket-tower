@@ -29,6 +29,17 @@ function createProvider(config: AIConfig): AIProvider {
         completionModel: config.completionModel,
         embeddingModel: config.embeddingModel,
       });
+    case "gemini":
+      return createOpenAIProvider({
+        name: "gemini",
+        baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+        apiKey: config.geminiApiKey as string,
+        completionModel: config.completionModel,
+        embeddingModel: config.embeddingModel,
+        // Thinking tokens count against maxTokens; keep reasoning minimal so the
+        // answer isn't truncated to nothing.
+        extraBody: { reasoning_effort: "minimal" },
+      });
     case "anthropic":
       return createAnthropicProvider({
         apiKey: config.anthropicApiKey as string,

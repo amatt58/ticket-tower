@@ -4,6 +4,7 @@ import { AI_PROVIDERS, type AIProviderName } from "./types";
 const DEFAULT_MODELS: Record<AIProviderName, { completion: string; embedding: string }> = {
   ollama: { completion: "llama3.2", embedding: "nomic-embed-text" },
   openai: { completion: "gpt-4o-mini", embedding: "text-embedding-3-small" },
+  gemini: { completion: "gemini-2.5-flash-lite", embedding: "gemini-embedding-001" },
   // Anthropic has no embeddings API; the provider rejects embed() calls.
   anthropic: { completion: "claude-haiku-5-5", embedding: "" },
 };
@@ -15,11 +16,15 @@ const envSchema = z
     EMBEDDING_MODEL: z.string().trim().min(1).optional(),
     OLLAMA_BASE_URL: z.url().default("http://localhost:11434"),
     OPENAI_API_KEY: z.string().trim().min(1).optional(),
+    GEMINI_API_KEY: z.string().trim().min(1).optional(),
     ANTHROPIC_API_KEY: z.string().trim().min(1).optional(),
   })
   .superRefine((env, ctx) => {
     if (env.AI_PROVIDER === "openai" && !env.OPENAI_API_KEY) {
       ctx.addIssue({ code: "custom", path: ["OPENAI_API_KEY"], message: "required for openai" });
+    }
+    if (env.AI_PROVIDER === "gemini" && !env.GEMINI_API_KEY) {
+      ctx.addIssue({ code: "custom", path: ["GEMINI_API_KEY"], message: "required for gemini" });
     }
     if (env.AI_PROVIDER === "anthropic" && !env.ANTHROPIC_API_KEY) {
       ctx.addIssue({
@@ -36,6 +41,7 @@ export type AIConfig = {
   embeddingModel: string;
   ollamaBaseUrl: string;
   openaiApiKey?: string;
+  geminiApiKey?: string;
   anthropicApiKey?: string;
 };
 
@@ -53,6 +59,7 @@ export function loadAIConfig(env: NodeJS.ProcessEnv = process.env): AIConfig {
     embeddingModel: data.EMBEDDING_MODEL ?? defaults.embedding,
     ollamaBaseUrl: data.OLLAMA_BASE_URL.replace(/\/+$/, ""),
     openaiApiKey: data.OPENAI_API_KEY,
+    geminiApiKey: data.GEMINI_API_KEY,
     anthropicApiKey: data.ANTHROPIC_API_KEY,
   };
 }
