@@ -93,6 +93,14 @@ OpenAI is chosen for production because:
 
 This split is managed entirely via environment variables — `AI_PROVIDER=ollama` locally, `AI_PROVIDER=openai` in Vercel's environment configuration.
 
+#### Update (2026-11): Gemini free tier for the live demo
+
+The live demo uses Google Gemini's free tier (`AI_PROVIDER=gemini`, default model `gemini-3.5-flash-lite`) instead of OpenAI, so the demo costs nothing to run. The API key comes from a Google AI Studio project with billing disabled. That project cannot be charged, and Google's own rate limits replace the spending cap, so the worst case is the AI pausing until the daily quota resets. OpenAI stays a supported option with no code changes.
+
+- **Implementation:** Gemini exposes an OpenAI-compatible endpoint, so the `gemini` provider reuses the OpenAI provider with a different base URL. It sets `reasoning_effort: "low"` because Gemini 3 models always think, and thinking tokens count against `maxTokens`.
+- **Reliability:** the free tier returns occasional `503` overload errors. `server/ai/http.ts` retries `429`/`5xx` responses with backoff (1s, 3s, 7s) before surfacing an error.
+- **Data usage:** on the free tier, Google may use prompts and outputs to improve its models, and human reviewers may read them. That is acceptable for TicketTower's synthetic seed data, but it would rule the free tier out for real customer data, where a paid tier or a provider with no-training terms would be required. The provider abstraction exists for exactly this kind of switch.
+
 ---
 
 ### 4. Branch and deployment pipeline
@@ -141,8 +149,9 @@ Deploying incrementally means infrastructure and environment problems surface wh
 | Variable | Local | Production |
 |----------|-------|-----------|
 | `DATABASE_URL` | Docker Postgres (`localhost:5432`) | Neon connection string |
-| `AI_PROVIDER` | `ollama` | `openai` |
+| `AI_PROVIDER` | `ollama` | `gemini` (free tier) or `openai` |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Not set |
-| `OPENAI_API_KEY` | Not set | Set in Vercel |
+| `OPENAI_API_KEY` | Not set | Set in Vercel if `AI_PROVIDER=openai` |
+| `GEMINI_API_KEY` | Optional (for testing Gemini locally) | Set in Vercel if `AI_PROVIDER=gemini` |
 | `AUTH_SECRET` | Any random string | `openssl rand -base64 32` |
 | `AUTH_URL` | Not set (auto-detected) | Not set (auto-detected on Vercel) |

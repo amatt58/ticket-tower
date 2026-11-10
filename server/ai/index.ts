@@ -36,9 +36,9 @@ function createProvider(config: AIConfig): AIProvider {
         apiKey: config.geminiApiKey as string,
         completionModel: config.completionModel,
         embeddingModel: config.embeddingModel,
-        // Thinking tokens count against maxTokens; keep reasoning minimal so the
-        // answer isn't truncated to nothing.
-        extraBody: { reasoning_effort: "minimal" },
+        // Thinking tokens count against maxTokens; keep reasoning low so the answer
+        // isn't truncated. ("minimal" is rejected by larger Gemini models.)
+        extraBody: { reasoning_effort: "low" },
       });
     case "anthropic":
       return createAnthropicProvider({

@@ -4,7 +4,7 @@ import { AI_PROVIDERS, type AIProviderName } from "./types";
 const DEFAULT_MODELS: Record<AIProviderName, { completion: string; embedding: string }> = {
   ollama: { completion: "llama3.2", embedding: "nomic-embed-text" },
   openai: { completion: "gpt-4o-mini", embedding: "text-embedding-3-small" },
-  gemini: { completion: "gemini-2.5-flash-lite", embedding: "gemini-embedding-001" },
+  gemini: { completion: "gemini-3.5-flash-lite", embedding: "gemini-embedding-001" },
   // Anthropic has no embeddings API; the provider rejects embed() calls.
   anthropic: { completion: "claude-haiku-5-5", embedding: "" },
 };
