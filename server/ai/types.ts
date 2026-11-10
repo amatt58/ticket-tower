@@ -1,4 +1,4 @@
-export const AI_PROVIDERS = ["ollama", "openai", "anthropic"] as const;
+export const AI_PROVIDERS = ["ollama", "openai", "gemini", "anthropic"] as const;
 export type AIProviderName = (typeof AI_PROVIDERS)[number];
 
 export type ChatMessage = {

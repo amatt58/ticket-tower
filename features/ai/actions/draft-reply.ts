@@ -3,7 +3,12 @@
 import { ticketActionSchema } from "@/features/ai/schema";
 import { toTicketPromptContext } from "@/features/ai/server/mappers";
 import { getTicketForPrompt } from "@/features/ai/server/queries";
-import { AIProviderError, type CompletionResult, getAIProvider } from "@/server/ai";
+import {
+  type AIProvider,
+  AIProviderError,
+  type CompletionResult,
+  getAIProvider,
+} from "@/server/ai";
 import {
   buildTicketReplyDraftPrompt,
   TICKET_REPLY_DRAFT_PROMPT_VERSION,
@@ -26,9 +31,12 @@ export async function draftReplyAction(input: { ticketId: string }): Promise<Dra
   const ticket = await getTicketForPrompt(parsed.data.ticketId);
   if (!ticket) return { error: "Ticket not found." };
 
-  const ai = getAIProvider();
+  let ai: AIProvider;
   let result: CompletionResult;
   try {
+    // Inside the try so a misconfigured provider (e.g. missing API key) returns an error
+    // instead of crashing the action.
+    ai = getAIProvider();
     result = await ai.complete(
       buildTicketReplyDraftPrompt(toTicketPromptContext(ticket), {
         agentName: session.user.name ?? "the support team",

@@ -6,6 +6,7 @@ import { toTicketPromptContext } from "@/features/ai/server/mappers";
 import { getTicketForPrompt } from "@/features/ai/server/queries";
 import {
   AIOutputError,
+  type AIProvider,
   AIProviderError,
   completeStructured,
   getAIProvider,
@@ -35,9 +36,12 @@ export async function summariseTicketAction(input: {
   if (!ticket) return { error: "Ticket not found." };
 
   // The model call happens outside the transaction — it can take several seconds.
-  const ai = getAIProvider();
+  let ai: AIProvider;
   let result: StructuredResult<TicketSummaryOutput>;
   try {
+    // Inside the try so a misconfigured provider (e.g. missing API key) returns an error
+    // instead of crashing the action.
+    ai = getAIProvider();
     result = await completeStructured(
       ai,
       buildTicketSummaryPrompt(toTicketPromptContext(ticket)),
